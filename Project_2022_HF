@@ -1,0 +1,267 @@
+#B.TECH PROJECT
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+np.seterr(divide='ignore', invalid= 'ignore')
+
+a=(input("Enter the value of porosity (%) of shale rock:")) 
+
+b=(input("enter the permeability 'K' (md) of shale rock"))
+
+
+# import pandas as pd
+# df = pd.read_csv (r'C:\Users\madhu\Desktop\PRO2022\shale.csv')
+# print (df)
+#Porosity (%) and Permeability (mD) values of the studied shale samples
+#       Sample            Porosity(%)        Permeability (mD)
+#       sand-A            3.93                 0.00057          
+#       Sand-B            0.90                 0.00040          
+#       Sand-C            0.17                 0.00021          
+#       Sand-D            1.93                 0.00039          
+#       Sand-E            2.27                 0.00083          
+#       Sand-F            1.75                 0.00088          
+#       sand-G            2.29                 0.00037          
+#       Sand-H            1.30                 0.00810  
+
+T = float(input("Time for fracture propagation(min) :"))
+G = float(input("Shear modulus (psi) :"))
+Q = int(input("Flow rate of fracturing fluid (bbl/min) :"))
+v = float(input("Poisson's ratio :"))
+mu = float(input("viscosity of fracturing fluid (cp) :"))
+cl = float(input("fluid loss coefficient (ft/min^0.5) :"))
+h = float(input("fracture height (ft) :"))
+Sigma_min = float(input("Horizontal minimum stress (psi) :"))
+proppant_concentration_at_time_t = float(input("proppant concentration at time t(% or fraction) :"))
+final_proppant_concentration = float(input("final proppant concentration(% or fraction):"))
+
+
+
+
+
+v1 = 1-v 
+t = np.linspace(0,T,50)
+pi = 3.14
+#KGD MODEL
+A = 0.48*(8*G*(Q**3)/(v1*mu))**(1/6)
+B = 1.32*(8*v1*(Q**3)*mu/G)**(1/6)
+KGD_L = A*(t**(2/3))
+KGD_w = B*(t**(1/3))
+C = 0.96*(2*(G**3)*Q*mu/((v1**3)*(KGD_L**2)))
+KGD_Pw = Sigma_min + C
+
+
+
+#PKN MODEL
+
+# 1. FOR A LARGE FLUID LEAK-OFF
+D = Q/(pi*cl*h)
+E = 4*(2*v1*mu*(Q**2)/((pi**3)*G*cl*h))**(1/4) 
+F = 4*(2*(G**3)*mu*(Q**2)/((pi**3)*(v1**3)*cl*(h**5)))**(1/4)
+PKN_L1 = D*(t**(1/2))
+PKN_w1 = E*(t**(1/8))
+PKN_Pw1 = F*(t**(1/8))
+
+#2. FOR NO FLUID LEAK-OFF
+
+J = 0.68*(G*(Q**3)/(v1*mu*(h**4)))**(1/5) 
+K = 2.5*(v1*mu*(Q**2)/(G*h))**(1/5) 
+M = 2.5*((G**4)*mu*(Q**2)/(v1**4)*(h**6))**(1/5)
+PKN_L2 = J*(t**(4/5))
+PKN_w2 = K*(t**(1/5))
+PKN_Pw2 = M*(t**(1/5))
+KGD_MODEL = {'TIME':t,'FRACTURE LENGTH':KGD_L,'WIDTH':KGD_w,'PRESSURE':KGD_Pw}
+PKN_MODEL_LARGE_LEAKOFF = {'TIME':t,'FRACTURE LENGTH':PKN_L1,'FRACTURE WIDTH':PKN_w1,'PRESSURE':PKN_Pw1}
+PKN_MODEL_NO_LEAKOFF = {'TIME':t,'FRACTURE LENGTH':PKN_L2,'FRACTURE WIDTH':PKN_w2,'PRESSURE':PKN_Pw2}
+KGD_DF = pd.DataFrame(KGD_MODEL)
+PKN1_DF = pd.DataFrame(PKN_MODEL_LARGE_LEAKOFF)
+PKN2_DF = pd.DataFrame(PKN_MODEL_NO_LEAKOFF)
+
+plt.figure(figsize=(20,5))
+plt.subplot(1,4,1)
+plt.plot(t,KGD_L)
+plt.xlabel('time')
+plt.ylabel('fracture length')
+plt.grid(True)
+plt.subplot(1,4,2)
+
+plt.plot(t,KGD_w)
+plt.xlabel('time')
+plt.ylabel('fracture width')
+plt.grid(True)
+plt.subplot(1,4,3)
+
+plt.plot(KGD_L,KGD_Pw)
+plt.xlabel('length')
+plt.ylabel('wellbore pressure')
+plt.grid(True)
+plt.subplot(1,4,4)
+
+plt.plot(t,KGD_Pw)
+plt.xlabel('time')
+plt.ylabel('wellbore pressure')
+plt.grid(True)
+plt.suptitle('KGD MODEL',fontsize='15')
+
+plt.show()
+plt.figure(figsize=(18,5))
+plt.subplot(1,3,1)
+plt.plot(t,PKN_L1)
+plt.xlabel('time')
+plt.ylabel('fracture length')
+plt.grid(True)
+plt.subplot(1,3,2)
+
+plt.plot(t,PKN_w1)
+plt.xlabel('time')
+plt.ylabel('fracture width')
+plt.grid(True)
+plt.subplot(1,3,3)
+plt.plot(t,PKN_Pw1)
+plt.xlabel('time')
+plt.ylabel('wellbore pressure')
+plt.grid(True)
+plt.suptitle('PKN MODEL WITH LARGE FLUID LEAKOFF',fontsize='16')
+
+
+plt.show()
+plt.figure(figsize=(18,5))
+plt.subplot(1,3,1)
+plt.plot(t,PKN_L2)
+plt.xlabel('time')
+plt.ylabel('fracture length')
+plt.grid(True)
+plt.subplot(1,3,2)
+plt.plot(t,PKN_w2)
+plt.xlabel('time')
+plt.ylabel('fracture width')
+plt.grid(True)
+plt.subplot(1,3,3)
+plt.plot(t,PKN_Pw2)
+plt.xlabel('time')
+plt.ylabel('wellbore pressure')
+plt.grid(True)
+plt.suptitle('PKN MODEL WITH NO FLUID LEAKOFF',fontsize='16')
+
+plt.show()
+plt.figure(figsize=(16,5))
+plt.subplot(1,3,1)
+plt.plot(t,PKN_L1,t,PKN_L2)
+plt.xlabel('time')
+plt.ylabel('fracture length')
+plt.grid(True)
+plt.legend(['large leakoff','no leakoff'])
+plt.subplot(1,3,2)
+plt.plot(t,PKN_w1,t,PKN_w2)
+plt.xlabel('time')
+plt.ylabel('fracture width')
+plt.grid(True)
+plt.legend(['large leakoff','no leakoff'])
+plt.subplot(1,3,3)
+plt.plot(t,PKN_Pw1,t,PKN_Pw2)
+plt.xlabel('time')
+plt.ylabel('wellbore pressure')
+plt.grid(True)
+plt.legend(['large leakoff','no leakoff'])
+plt.suptitle('PKN MODEL BOTH CASES COMPARED',fontsize='16')
+
+plt.show()
+plt.figure(figsize=(16,5))
+plt.subplot(1,3,1)
+plt.plot(t,KGD_L,'b.',t,PKN_L1,'g-',t,PKN_L2,'r*')
+plt.xlabel('time')
+plt.ylabel('fracture length')
+plt.grid(True)
+plt.legend(['KGD','PKN-large leakoff','PKN-no leakoff'])
+plt.subplot(1,3,2)
+plt.plot(t,KGD_w,'b.',t,PKN_w1,'g-',t,PKN_w2,'r*')
+plt.xlabel('time')
+plt.ylabel('fracture width')
+plt.grid(True)
+plt.legend(['KGD','PKN-large leakoff','PKN-no leakoff'])
+plt.subplot(1,3,3)
+plt.plot(t,KGD_Pw,'b.',t,PKN_Pw1,'g-',t,PKN_Pw2,'r*')
+plt.xlabel('time')
+plt.ylabel('wellbore pressure')
+plt.grid(True)
+plt.legend(['KGD','PKN-large leakoff','PKN-no leakoff'])
+
+#formation breakdown pressure calculation
+
+ro = float(input("average density of overlying rocks(ppg):"))
+depth = float(input("depth(ft):"))
+pore_pressure_gradient = float(input("pore pressure gradient(psi/ft):"))
+tensile_stress = float(input("tensile stress(psi):"))
+tectonic_stress = float(input("tectonic stress(psi):"))
+
+#biot's constant
+alpha = 0.7
+vertical_stress = 0.052*ro*depth
+pore_pressure = pore_pressure_gradient*depth
+effective_vertical_stress = vertical_stress - alpha*pore_pressure
+
+effective_horizontal_minimum_stress = v*effective_vertical_stress/v1
+horizontal_minimum_stress = effective_horizontal_minimum_stress + alpha*pore_pressure
+horizontal_maximum_stress = horizontal_minimum_stress + tectonic_stress
+Formation_breakdown_pressure = 3*horizontal_minimum_stress - horizontal_maximum_stress + tensile_stress - pore_pressure
+
+#pad volume
+fracture_half_length = (A*(T**(2/3)))/2
+average_width = 0.075*(pi/4)*(mu*Q*v1*(fracture_half_length**2)/(G*h))**(1/4)
+volume_injected = Q*T
+volume_of_fracture = 2*fracture_half_length*h*average_width
+eta = volume_of_fracture/volume_injected
+abselon = (1-eta)/(1+eta)
+Pad_volume = volume_injected*abselon
+#proppant schedule calculation
+#pad volume injection time
+pad_time = Pad_volume/Q
+#injection time is total fracturing fluid injection time
+proppant_schedule = pad_time + (T - pad_time)*((proppant_concentration_at_time_t/final_proppant_concentration)**(1/eta))
+
+#proppat weight calculation
+proppant_volume = final_proppant_concentration*(volume_injected - Pad_volume)/(1 + abselon)
+proppant_type = int(input("proppant: 1. sand \n 2. ceramic \n 3. resin coated sand \n 4. soil with mica or iron\n "))
+
+if proppant_type == 1:
+ proppant_weight = 2.65*proppant_volume # S.G OF SAND 2.65
+elif proppant_type == 2:
+ proppant_weight = 3.2*proppant_volume # S.G OF CERAMIC 3.2
+elif proppant_type == 3:
+ proppant_weight = 2.6*proppant_volume #S.G OF RESIN COATED SAND 2.6
+elif proppant_type == 4:
+ proppant_weight = 2.75*proppant_volume # S.G OF SOIL WITH MICA OR IRON 2.75
+else: 
+    proppant_weight = 1*proppant_volume # slurry
+    
+
+KGD_fracture_length = A*(T**(2/3))
+KGD_fracture_width = B*(T**(1/3))
+pressure_2 = 0.96*(2*(G**3)*Q*mu/((v1**3)*(KGD_fracture_length**2)))
+KGD_pressure = Sigma_min + pressure_2
+PKN_fracture_length_1 = D*(T**(1/2))
+PKN_fracture_width_1 = E*(T**(1/8))
+PKN_pressure_1 = F*(T**(1/8))
+PKN_fracture_length_2 = J*(T**(4/5))
+PKN_fracture_width_2 = K*(T**(1/5))
+PKN_pressure_2 = M*(T**(1/5))
+
+print("KGD model")
+print("\nKGD fracture length = ",KGD_fracture_length,"ft")
+print("KGD fracture opening width = ",KGD_fracture_width,"inch")
+print("KGD wellbore pressure = ",KGD_pressure,"psi")
+print("\nPKN model - large fluid leakoff")
+print("\nPKN fracture length = ",PKN_fracture_length_1,"ft")
+print("PKN fracture opening width = ",PKN_fracture_width_1,"inch")
+print("PKN wellbore pressure = ",PKN_pressure_1,"psi")
+print("\nPKN model - no fluid leakoff")
+print("\nPKN fracture length = ",PKN_fracture_length_2,"ft")
+print("PKN fracture opening width = ",PKN_fracture_width_2,"inch")
+print("PKN wellbore pressure = ",PKN_pressure_2,"psi")
+print("\nFormation breakdown pressure = ",Formation_breakdown_pressure,"psi")
+print("Pad volume = ",Pad_volume,"bbl")
+
+print("Proppant schedule = ",proppant_schedule,"min")
+print("Proppant weight required = ",proppant_weight,"lbs")
+plt.suptitle('COMPARISON BETWEEN KGD,PKN-LARGE LEAKOFF & PKNNO LEAKOFF',fontsize='16')
+plt.show()
